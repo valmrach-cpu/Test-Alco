@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест: Пил или не пил?</title>
+    <style>
+        :root {
+            --bg-color: #f5f7fa;
+            --text-color: #333;
+            --primary: #4a6fa5;
+            --secondary: #ff6b6b;
+            --border: 2px solid #d1d9e6;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            margin: 0;
+            background: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+        .progress {
+            height: 10px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .question-number {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .question-text {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        .options {
+            margin-bottom: 20px;
+        }
+        .options label {
+            display: block;
+            margin: 8px 0;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .options label:hover {
+            background: #eef2f7;
+            transform: translateY(-2px);
+        }
+        .options input {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        .options input:checked + span {
+            background: var(--primary);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .btn {
+            padding: 12px 20px;
+            font-size: 1em;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .btn:hover:not(:disabled) {
+            background: #3a5a8a;
+            transform: scale(1.05);
+        }
+        #prev-btn {
+            background: var(--secondary);
+        }
+        #prev-btn:hover:not(:disabled) {
+            background: #ff5252;
+        }
+        #share-btn {
+            background: #28a745;
+        }
+        #share-btn:hover:not(:disabled) {
+            background: #218838;
+        }
+        #result {
+            text-align: center;
+            display: none;
+        }
+        .result-title {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+        .result-text {
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .result-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: var(--shadow);
+        }
+        .disclaimer {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-top: 20px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @media (max-width: 400px) {
+            .container {
+                padding: 15px;
+            }
+            .question-text {
+                font-size: 1em;
+            }
+            .options label {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+            .btn {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+        <div id="quiz" class="fade-in">
+            <div class="question-number" id="question-number"></div>
+            <div class="question-text" id="question-text"></div>
+            <div class="options" id="options" role="radiogroup" aria-labelledby="question-text"></div>
+            <div class="button-group">
+                <button class="btn" id="prev-btn">Назад</button>
+                <button class="btn" id="next-btn" disabled>Далее</button>
+            </div>
+        </div>
+        <div id="result">
+            <div class="result-title">Твой результат</div>
+            <img class="result-image" id="result-image" src="" alt="Результат теста">
+            <div class="result-text" id="result-text"></div>
+            <div class="button-group">
+                <button class="btn" id="share-btn">Поделиться</button>
+                <button class="btn" onclick="restartQuiz()">Пройти ещё раз</button>
+            </div>
+            <div class="disclaimer">
+                *Результат — это просто ржака, не принимай всерьёз. Если Лёха зовёт бухать, подумай дважды!
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+    const questions = [
+        { q: "Что ты делаешь, когда Лёха орёт: 'Го бухать!'?", o: ["Собираю рюкзак с пивом", "Говорю: 'Лёха, ты за рулём!'", "Прячусь под стол", "Уже держу стакан"] },
+        { q: "Какой твой любимый 'перегар' утра?", o: ["Кофе, чтоб очнуться", "Похер, сплю до обеда", "Пиво, чтоб догнаться", "Вода, я же трезвенник"] },
+        { q: "Что ты орёшь, когда напьёшься?", o: ["'Где мой телефон?!'", "'Лёха, ты лучший!'", "Молчу, я в отключке", "Пою шансон на всю хату"] },
+        { q: "Как ты идёшь домой после тусы с Лёхой?", o: ["Ровно, как по линейке", "Зигзагами, но гордо", "На такси, денег не жалко", "Меня несут друзья"] },
+        { q: "Что ты жрёшь на похмелье?", o: ["Рассольчик от огурцов", "Пиццу, пока не тресну", "Ничего, я в коме", "Салатик, я же ЗОЖник"] },
+        { q: "Как Лёха зовёт тебя на тусу?", o: ["'Бери шмотки, погнали!'", "'Без тебя не начинаем!'", "Молча, просто орёт 'ЭЭЭ!'", "Я сам Лёху зову"] },
+        { q: "Что ты делаешь в баре в 3 ночи?", o: ["Танцую, как король", "Сплю на барной стойке", "Спорю с Лёхой о жизни", "Сижу трезвый, грущу"] },
+        { q: "Как ты реагируешь на 'ещё по одной'?", o: ["'Лей, не трынди!'", "'Бери две, я плачу!'", "'Ребят, я пас'", "Уже пью, не мешай"] },
+        { q: "Что у тебя в кармане после тусы?", o: ["Пара тыщ и чек", "Пусто, всё пропил", "Чья-то зажигалка", "Ключи и жвачка"] },
+        { q: "Как ты утром вспоминаешь вечер с Лёхой?", o: ["Всё чётко, как в кино", "Обрывки, но ржачно", "Нихрена не помню", "Я не пил, я следил"] }
+    ];
+
+    const scoring = {
+        0: [ [0,0,2,0], [2,0,0,0], [0,0,0,1], [0,2,0,0] ],
+        1: [ [0,0,0,1], [0,0,2,0], [0,2,0,0], [2,0,0,0] ],
+        2: [ [0,0,1,0], [0,2,0,0], [0,0,2,0], [2,0,0,0] ],
+        3: [ [2,0,0,0], [0,0,1,0], [0,1,0,0], [0,0,2,0] ],
+        4: [ [0,0,0,1], [0,1,0,0], [0,0,2,0], [2,0,0,0] ],
+        5: [ [0,1,0,0], [0,2,0,0], [0,0,0,1], [0,0,2,0] ],
+        6: [ [0,1,0,0], [0,0,2,0], [0,2,0,0], [2,0,0,0] ],
+        7: [ [0,2,0,0], [0,1,0,0], [2,0,0,0], [0,0,2,0] ],
+        8: [ [0,1,0,0], [0,0,2,0], [0,0,0,1], [2,0,0,0] ],
+        9: [ [2,0,0,0], [0,0,1,0], [0,0,2,0], [0,1,0,0] ]
+    };
+
+    const results = [
+        {
+            type: 'Трезвый, как Лёхин череп',
+            description: 'Бери ключи, ты ты за руль! Ты трезвее стекла, даже Лёха в шоке. Пока все пьяные орут, ты сидишь с водичкой и ржёшь над их цирком. Лёха говорит: "Ты не наш, но за руль сядешь!"',
+            image: 'https://avatars.mds.yandex.net/i?id=f5e047f5d17c40f90cccb370a5553a7b_sr-9555580-images-thumbs&n=13'
+        },
+        {
+            type: 'Лёгкий бриз',
+            description: 'Ты слегка навеселе, как Лёха после первой пивной банки. Ещё держишь себя в руках, но уже готов орать тосты. Лёха одобряет: "Бери ещё, норм пацан!"',
+            image: 'https://i07.fotocdn.net/s206/b46f9f71835f3e9b/public_pin_l/2394465062.jpg'
+        },
+        {
+            type: 'Весёлый движ',
+            description: 'Ты в самом соку! Танцуешь, как Лёха на свадьбе, и орёшь: "Где мой шот?!" Жизнь — тусовка, и ты её король. Лёха кричит: "Бро, ты мой герой!"',
+            image: 'https://s00.yaplakal.com/pics/pics_preview/7/5/1/10991157.jpg'
+        },
+        {
+            type: 'Пьяный философ',
+            description: 'Ты уже несёшь херню про смысл жизни, как Лёха после пятой рюмки. Споришь с барменом о космосе и плачешь под шансон. Лёха: "Бро, ты глубокий, как мой стакан!"',
+            image: 'https://health.mail.ru/pic/news/2019/05/30/93/56/9356d8f8c2ce6bd30d7bbaf559bc754b.jpg'        },
+        {
+            type: 'В хлам',
+            description: 'Ты в отключке, как Лёха после трёх литров водяры. Друзья тащат тебя домой, а ты орёшь: "Где Лёха?!" Он рядом, тоже в хлам. Лёха: "Мы с тобой на одной волне, братан!"',
+            image: 'https://i.pinimg.com/originals/fe/89/b3/fe89b357315c9111d91ee2d94867a78b.jpg'         },
+        {
+            type: 'Лёха-стайл',
+            description: 'Ты — копия Лёхи! Любишь бухать, орать и терять тапки. Тусите вместе до утра, и всё заканчивается песнями под гитару. Лёха: "Ты мой брат по душе, бери ещё!"',
+            image: 'https://i.pinimg.com/originals/6c/b8/b0/6cb8b07428195ba40d4e935639c5bf59.jpg'         },
+        {
+            type: 'Похмельный воин',
+            description: 'Ты пережил тусу с Лёхой, но теперь жрёшь рассол и воешь от света. Голова трещит, но ты герой — выжил! Лёха: "Бери пиво, это лечит!"',
+            image: 'https://moscowchanges.ru/wp-content/uploads/2025/01/poxmelie.jpg' 
+        }
+    ];
+
+    let currentQuestion = parseInt(localStorage.getItem('quizCurrentQuestion')) || 0;
+    let answers = JSON.parse(localStorage.getItem('quizAnswers')) || [];
+    let scores = JSON.parse(localStorage.getItem('quizScores')) || { sober: 0, tipsy: 0, drunk: 0, philosopher: 0 };
+
+    function loadQuestion() {
+        if (currentQuestion >= questions.length) {
+            showResult();
+            return;
+        }
+        const q = questions[currentQuestion];
+        document.getElementById("question-number").textContent = `Вопрос ${currentQuestion + 1} из ${questions.length}`;
+        document.getElementById("question-text").textContent = q.q;
+        document.getElementById("options").innerHTML = "";
+        q.o.forEach((option, index) => {
+            const label = document.createElement("label");
+            label.innerHTML = `<input type="radio" name="option" value="${index}" aria-label="${option}"><span>${option}</span>`;
+            if (answers[currentQuestion] == index) {
+                label.querySelector('input').checked = true;
+            }
+            document.getElementById("options").appendChild(label);
+        });
+        document.getElementById("next-btn").disabled = !document.querySelector("input[name='option']:checked");
+        document.getElementById("prev-btn").style.display = currentQuestion > 0 ? 'block' : 'none';
+        document.getElementById("progress-bar").style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
+        document.getElementById("quiz").classList.remove('fade-in');
+        void document.getElementById("quiz").offsetWidth;
+        document.getElementById("quiz").classList.add('fade-in');
+        document.querySelectorAll("input[name='option']").forEach(input => {
+            input.addEventListener("change", () => {
+                document.getElementById("next-btn").disabled = false;
+            });
+        });
+    }
+
+    document.getElementById("next-btn").addEventListener("click", () => {
+        const selected = document.querySelector("input[name='option']:checked");
+        if (selected) {
+            const val = parseInt(selected.value);
+            if (answers[currentQuestion] === undefined) {
+                const add = scoring[currentQuestion][val];
+                scores.sober += add[0];
+                scores.tipsy += add[1];
+                scores.drunk += add[2];
+                scores.philosopher += add[3];
+            } else {
+                const oldVal = answers[currentQuestion];
+                const oldAdd = scoring[currentQuestion][oldVal];
+                scores.sober -= oldAdd[0];
+                scores.tipsy -= oldAdd[1];
+                scores.drunk -= oldAdd[2];
+                scores.philosopher -= oldAdd[3];
+                const add = scoring[currentQuestion][val];
+                scores.sober += add[0];
+                scores.tipsy += add[1];
+                scores.drunk += add[2];
+                scores.philosopher += add[3];
+            }
+            answers[currentQuestion] = val;
+            localStorage.setItem('quizAnswers', JSON.stringify(answers));
+            localStorage.setItem('quizScores', JSON.stringify(scores));
+            localStorage.setItem('quizCurrentQuestion', currentQuestion + 1);
+            currentQuestion++;
+            loadQuestion();
+        }
+    });
+
+    document.getElementById("prev-btn").addEventListener("click", () => {
+        if (currentQuestion > 0) {
+            currentQuestion--;
+            localStorage.setItem('quizCurrentQuestion', currentQuestion);
+            loadQuestion();
+        }
+    });
+
+    function showResult() {
+        if (answers.length < questions.length) {
+            alert("Ответь на все вопросы, не трынди!");
+            return;
+        }
+        document.getElementById("quiz").style.display = "none";
+        document.getElementById("result").style.display = "block";
+        document.getElementById("progress-bar").style.width = "100%";
+
+        const traits = [
+            { name: 'sober', value: scores.sober },
+            { name: 'tipsy', value: scores.tipsy },
+            { name: 'drunk', value: scores.drunk },
+            { name: 'philosopher', value: scores.philosopher }
+        ];
+        const maxTrait = Math.max(scores.sober, scores.tipsy, scores.drunk, scores.philosopher);
+        const total = scores.sober + scores.tipsy + scores.drunk + scores.philosopher;
+        const topTraits = traits.filter(trait => trait.value === maxTrait);
+        let result;
+
+        if (topTraits.length === 1 && maxTrait > total * 0.35) {
+            switch (topTraits[0].name) {
+                case 'sober':
+                    result = results[0];
+                    break;
+                case 'tipsy':
+                    result = results[1];
+                    break;
+                case 'drunk':
+                    result = results[2];
+                    break;
+                case 'philosopher':
+                    result = results[3];
+                    break;
+            }
+        } else if (topTraits.length > 1) {
+            if (topTraits.some(t => t.name === 'drunk') && topTraits.some(t => t.name === 'philosopher')) {
+                result = results[4]; // В хлам
+            } else if (topTraits.some(t => t.name === 'tipsy') && topTraits.some(t => t.name === 'drunk')) {
+                result = results[5]; // Лёха-стайл
+            } else {
+                result = results[6]; // Похмельный воин
+            }
+        } else {
+            result = results[6]; // Похмельный воин
+        }
+
+        document.getElementById("result-text").innerHTML = result.description;
+        document.getElementById("result-image").src = result.image;
+        document.getElementById("result-image").alt = result.type;
+    }
+
+    function restartQuiz() {
+        localStorage.removeItem('quizAnswers');
+        localStorage.removeItem('quizScores');
+        localStorage.removeItem('quizCurrentQuestion');
+        currentQuestion = 0;
+        answers = [];
+        scores = { sober: 0, tipsy: 0, drunk: 0, philosopher: 0 };
+        document.getElementById("result").style.display = "none";
+        document.getElementById("quiz").style.display = "block";
+        loadQuestion();
+    }
+
+    loadQuestion();
+</script>
